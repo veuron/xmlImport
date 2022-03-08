@@ -12,6 +12,7 @@ namespace XmlImport.Controllers
             return View();
         }
 
+        //Метод с WebClient
         public async void DownloadFile()
         {
             var url = $"https://www.sec.gov/Archives/edgar/daily-index/2022/QTR1/sitemap.20220107.xml";
