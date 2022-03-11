@@ -24,20 +24,5 @@ namespace XmlImport.Controllers
             client.DownloadFile(url, savePath);
         }
 
-
-        public async void Download()
-        {
-            var httpClient = new HttpClient();
-           // httpClient.DefaultRequestHeaders.Add()
-
-            using (var stream = await httpClient.GetStreamAsync("https://www.sec.gov/Archives/edgar/daily-index/2022/QTR1/sitemap.20220107.xml"))
-            {
-                using (var fileStream = new FileStream("sitemap.20220107.xml", FileMode.CreateNew))
-                {
-                    await stream.CopyToAsync(fileStream);
-                }
-            }
-        }
-
     }
 }
