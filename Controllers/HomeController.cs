@@ -13,19 +13,24 @@ namespace XmlImport.Controllers
         }
 
         //Метод с WebClient
-        public async void DownloadFile()
+        public void DownloadFile()
         {
-            
-            var filename = "sitemap.20220107.xml";
             var year = "2022";
             var folder = "QTR1";
-            var url = $"https://www.sec.gov/Archives/edgar/daily-index/{year}/{folder}/{filename}";
-            var fullSavePath = $"D:/Project/XML/{year}/{folder}/{filename}";
+            /*var url = $"https://www.sec.gov/Archives/edgar/daily-index/{year}/{folder}";
+            var fullSavePath = $"D:/Project/XML/{year}/{folder}";*/
+
+            var uri = "https://www.sec.gov/Archives/edgar/daily-index/2022/QTR1/";
             var path = $"D:/Project/XML/{year}/{folder}";
 
             WebClient client = GetClient();
-            CreateDirectory(path);
-            client.DownloadFile(url, fullSavePath);
+            string content = client.DownloadString(uri);
+            GetFileName(content);
+            
+
+           // CreateDirectory(path);
+           // client.DownloadFile(url, fullSavePath);
+         
         }
 
 
@@ -49,6 +54,53 @@ namespace XmlImport.Controllers
 
             return client;            
         }
+
+
+        public void DownloadFiles()
+        {
+            var filename = "sitemap.20220107.xml";
+            var year = "2022";
+            var folder = "QTR1";
+            var url = $"https://www.sec.gov/Archives/edgar/daily-index/{year}/{folder}/{filename}";
+            var fullSavePath = $"D:/Project/XML/{year}/{folder}/{filename}";
+            var path = $"D:/Project/XML/{year}/{folder}";
+
+            string folderPath = @"\\\\www.sec.gov\\Archives\\edgar\\daily-index\\2022\QTR1";
+
+            
+            DirectoryInfo folderInfo = new DirectoryInfo(folderPath);
+            if (folderInfo.Exists)
+            {
+                var files = Directory.GetFiles(folderPath, "*.idx", SearchOption.TopDirectoryOnly);
+                if (files.Any())
+                {
+                    var first = files.First();
+                }
+
+            }
+        }
+
+        //Вытаскивает из контекста имена файлов master
+        private List<string> GetFileName (string content)
+        {
+            List<string> result = new List<string>();            
+            string[] strArray = content.Split('<');
+
+            foreach (string a in strArray)
+            {
+                if (a.Contains("\"master."))
+                {
+                    string temp = a.Replace("a href=\"", "").Replace("\">","");
+                    result.Add(temp);
+                }
+                    
+            }
+
+            return result;
+        }
+
+
+
 
     }
 }
