@@ -13,28 +13,49 @@ namespace XmlImport.Controllers
         }
 
         //Метод с WebClient
-        public void DownloadFile()
+        public string DownloadFile()
         {
-            var year = "2022";
-            var folder = "QTR1";
-            /*var url = $"https://www.sec.gov/Archives/edgar/daily-index/{year}/{folder}";
-            var fullSavePath = $"D:/Project/XML/{year}/{folder}";*/
-
-            var uri = "https://www.sec.gov/Archives/edgar/daily-index/2022/QTR1/";
-            var path = $"D:/Project/XML/{year}/{folder}";
-
+            string year = "2022";
+            List<string> fileNameList = new List<string>();
+            List<string> directoryList = new List<string>();
             WebClient client = GetClient();
-            string content = client.DownloadString(uri);
-            GetFileName(content);
-            
 
-           // CreateDirectory(path);
-           // client.DownloadFile(url, fullSavePath);
-         
+            //Извлекаем имена папок
+            string contentDirectoryQtr = client.DownloadString($"https://www.sec.gov/Archives/edgar/daily-index/{year}/");
+            directoryList = GetDirectoryName(contentDirectoryQtr);
+           
+            foreach (string directory in directoryList)
+            {
+                var localPath = $"D:\\XML\\daily-index\\{year}\\{directory}";
+                CreateDirectory(localPath);
+                //Из страницы с именами файлов вытаскиваем имена и формируем список
+                var dirPath = $"https://www.sec.gov/Archives/edgar/daily-index/{year}/{directory}/";
+                
+                client = GetClient();
+
+                string contentFileName = client.DownloadString(dirPath);
+                fileNameList = GetFileName(contentFileName);
+                //Добавление в базу сделать здесь!
+                
+                foreach (var file in fileNameList)
+                {
+                    client = GetClient();
+                    var fullpath = dirPath + file;
+                    var localFullPath = $"{localPath}\\{file}";
+                    client.DownloadFile(fullpath, localFullPath);
+                }
+
+            }
+            return ("Файлы скачаны!");
+
+
         }
 
 
-        //Проверяем есть ли папка (которую передали в параметрах), если нет то создаем
+        /// <summary>
+        /// Создаем папки на локальной машине
+        /// </summary>
+        /// <param name="path"></param>
         private void CreateDirectory(string path)
         {
             DirectoryInfo dirInfo = new DirectoryInfo(path);
@@ -44,7 +65,10 @@ namespace XmlImport.Controllers
             }
         }
 
-        //Создаем клиент с нужными хэйдэрами и возвращаем готовый экземпляр клиента
+        /// <summary>
+        /// Возвращаем клиент с нужными хейдерами
+        /// </summary>
+        /// <returns></returns>
         private WebClient GetClient()
         {
             WebClient client = new WebClient();
@@ -55,50 +79,47 @@ namespace XmlImport.Controllers
             return client;            
         }
 
-
-        public void DownloadFiles()
-        {
-            var filename = "sitemap.20220107.xml";
-            var year = "2022";
-            var folder = "QTR1";
-            var url = $"https://www.sec.gov/Archives/edgar/daily-index/{year}/{folder}/{filename}";
-            var fullSavePath = $"D:/Project/XML/{year}/{folder}/{filename}";
-            var path = $"D:/Project/XML/{year}/{folder}";
-
-            string folderPath = @"\\\\www.sec.gov\\Archives\\edgar\\daily-index\\2022\QTR1";
-
-            
-            DirectoryInfo folderInfo = new DirectoryInfo(folderPath);
-            if (folderInfo.Exists)
-            {
-                var files = Directory.GetFiles(folderPath, "*.idx", SearchOption.TopDirectoryOnly);
-                if (files.Any())
-                {
-                    var first = files.First();
-                }
-
-            }
-        }
-
-        //Вытаскивает из контекста имена файлов master
+        /// <summary>
+        /// Вытаскивает из контекста имена файлов master
+        /// </summary>
+        /// <param name="content"></param>
+        /// <returns></returns>
         private List<string> GetFileName (string content)
         {
             List<string> result = new List<string>();            
             string[] strArray = content.Split('<');
-
             foreach (string a in strArray)
             {
                 if (a.Contains("\"master."))
                 {
                     string temp = a.Replace("a href=\"", "").Replace("\">","");
                     result.Add(temp);
+                }                    
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Вытаскивает имена подпапок кварталов
+        /// </summary>
+        /// <param name="content"></param>
+        /// <returns></returns>
+        private List<string> GetDirectoryName(string content)
+        {
+            List<string> result = new List<string>();
+
+            string[] strArray = content.Split('<');
+            foreach (string a in strArray)
+            {
+                if (a.Contains("\"QTR"))
+                {
+                    string temp = a.Replace("a href=\"", "").Replace("/\">", "");
+                    result.Add(temp);
                 }
-                    
             }
 
             return result;
         }
-
 
 
 
