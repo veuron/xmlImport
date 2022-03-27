@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using System.Net;
+using System.Text;
 using XmlImport.Models;
 
 namespace XmlImport.Controllers
@@ -20,35 +21,63 @@ namespace XmlImport.Controllers
             List<string> directoryList = new List<string>();
             WebClient client = GetClient();
 
-            //Извлекаем имена папок
+            ////Извлекаем имена папок
             string contentDirectoryQtr = client.DownloadString($"https://www.sec.gov/Archives/edgar/daily-index/{year}/");
             directoryList = GetDirectoryName(contentDirectoryQtr);
-           
+
             foreach (string directory in directoryList)
             {
                 var localPath = $"D:\\XML\\daily-index\\{year}\\{directory}";
                 CreateDirectory(localPath);
                 //Из страницы с именами файлов вытаскиваем имена и формируем список
                 var dirPath = $"https://www.sec.gov/Archives/edgar/daily-index/{year}/{directory}/";
-                
+
                 client = GetClient();
 
+                //Скачиваем страницу
                 string contentFileName = client.DownloadString(dirPath);
-                fileNameList = GetFileName(contentFileName);
-                //Добавление в базу сделать здесь!
                 
+                //Получаем имена файлов со страницы
+                fileNameList = GetFileName(contentFileName);
+
                 foreach (var file in fileNameList)
                 {
                     client = GetClient();
                     var fullpath = dirPath + file;
                     var localFullPath = $"{localPath}\\{file}";
                     client.DownloadFile(fullpath, localFullPath);
+                    ParseFile(localFullPath);
                 }
-
             }
-            return ("Файлы скачаны!");
+
+            return ("Все файлы скачаны!");
 
 
+        }
+
+        /// <summary>
+        /// Считываем скачанный файл и парсим его
+        /// складываем его в список типа Master
+        /// </summary>
+        /// <param name="path"></param>
+        private  void ParseFile(string path)
+        {
+            List<Master> list = new List<Master>();     
+
+            using (StreamReader reader = new StreamReader(path))
+            {
+                string sub = "-----";               
+                string text =  reader.ReadToEnd();
+                int indexOfSubstring = text.LastIndexOf(sub);
+                string[] txtArray = text.Substring(indexOfSubstring).Replace("-----", "").Trim().Split(new char[] { '\r','\n' }, StringSplitOptions.RemoveEmptyEntries);         
+
+                foreach (string s in txtArray)
+                {
+                    string[] lineArr = s.Split("|");
+                    list.Add(new Master(int.Parse(lineArr[0]), lineArr[1], lineArr[2], lineArr[3], lineArr[4]));
+                }               
+            }
+            Console.WriteLine($"Файл {path} обработан.");
         }
 
 
