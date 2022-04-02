@@ -19,6 +19,7 @@ namespace XmlImport.Controllers
             string year = "2022";
             List<string> fileNameList = new List<string>();
             List<string> directoryList = new List<string>();
+            List<Master> list = new List<Master>();
             WebClient client = GetClient();
 
             ////Извлекаем имена папок
@@ -45,14 +46,24 @@ namespace XmlImport.Controllers
                     client = GetClient();
                     var fullpath = dirPath + file;
                     var localFullPath = $"{localPath}\\{file}";
-                    client.DownloadFile(fullpath, localFullPath);
-                    ParseFile(localFullPath);
+                    if(!System.IO.File.Exists(localFullPath))
+                    {
+                      client.DownloadFile(fullpath, localFullPath);
+                    }                    
+                    ParseFile(localFullPath, list);
                 }
             }
 
-            return ("Все файлы скачаны!");
-
-
+            using (ApplicationContext db = new ApplicationContext())
+            {
+                foreach (var info in list)
+                {
+                    db.Masters.Add(info);
+                    db.SaveChanges();
+                }
+            }
+            
+            return ("Все файлы скачаны и добавлены в базу!");
         }
 
         /// <summary>
@@ -60,10 +71,8 @@ namespace XmlImport.Controllers
         /// складываем его в список типа Master
         /// </summary>
         /// <param name="path"></param>
-        private  void ParseFile(string path)
-        {
-            List<Master> list = new List<Master>();     
-
+        private  void ParseFile(string path, List<Master> list)
+        { 
             using (StreamReader reader = new StreamReader(path))
             {
                 string sub = "-----";               
@@ -74,7 +83,7 @@ namespace XmlImport.Controllers
                 foreach (string s in txtArray)
                 {
                     string[] lineArr = s.Split("|");
-                    list.Add(new Master(int.Parse(lineArr[0]), lineArr[1], lineArr[2], lineArr[3], lineArr[4]));
+                    list.Add(new Master(lineArr[0], lineArr[1], lineArr[2], lineArr[3], lineArr[4]));
                 }               
             }
             Console.WriteLine($"Файл {path} обработан.");
