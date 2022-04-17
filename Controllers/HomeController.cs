@@ -21,6 +21,7 @@ namespace XmlImport.Controllers
             List<string> directoryList = new List<string>();
             List<Master> list = new List<Master>();
             WebClient client = GetClient();
+            int counter = 0;
 
             ////Извлекаем имена папок
             string contentDirectoryQtr = client.DownloadString($"https://www.sec.gov/Archives/edgar/daily-index/{year}/");
@@ -51,20 +52,34 @@ namespace XmlImport.Controllers
                       client.DownloadFile(fullpath, localFullPath);
                     }                    
                     ParseFile(localFullPath, list);
+                    counter = list.Count();
                 }
             }
+            ////
+            SaveDb(list, counter);
+            
+            return ("Запущено скачивание файлов!");
+        }
 
+        private async void  SaveDb(List<Master> list, int counter)
+        {
             using (ApplicationContext db = new ApplicationContext())
             {
+                int count = 0;
                 foreach (var info in list)
                 {
-                    db.Masters.Add(info);
-                    db.SaveChanges();
+                    await db.Masters.AddAsync(info);
+                    
+                    count++;
+                    Console.WriteLine($"{count} файл из {counter} добавлен в БД! Осталось {counter - count} ");
                 }
+                Console.WriteLine("Все файлы скачаны");
+                Console.WriteLine("Сохранение в базу данных.");
+                db.SaveChanges();
+                Console.WriteLine("Успешное сохранение.");
             }
-            
-            return ("Все файлы скачаны и добавлены в базу!");
         }
+
 
         /// <summary>
         /// Считываем скачанный файл и парсим его
