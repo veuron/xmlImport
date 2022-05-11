@@ -1,7 +1,19 @@
+using Microsoft.EntityFrameworkCore;
+using XmlImport;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+
 builder.Services.AddControllersWithViews();
+
+//Для codeFirst необходим пакет microsoft.entityframeworkcore.tools
+//Далее в консоли Nuget ввести Add-Migration InitialDatabase
+//Update-Database
+
+
+
+
+
 
 var app = builder.Build();
 

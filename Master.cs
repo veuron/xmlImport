@@ -22,7 +22,12 @@ namespace XmlImport
             FormType = formType;
             DateField = dateField;
             FileName = fileName;
-        }       
+        }
 
+        public override bool Equals(object? obj)
+        {
+            if (obj is Master master) return CIK == master.CIK && CompanyName == master.CompanyName && FormType == master.FormType;
+            return false;
+        }
     }
 }
